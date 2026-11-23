@@ -4,12 +4,14 @@ use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
 #[cfg(unix)]
-use std::time::UNIX_EPOCH;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, iter};
 
 // These dependencies are used by the binary exercised by this test target.
 use clap as _;
+use humantime as _;
 use serde_json as _;
 
 const CRATE_CACHE: &str = "example-0000000000000";
@@ -17,6 +19,8 @@ const OLD: &str = "s-0000000001-0000000-0000000000000000000000000";
 const NEW: &str = "s-0000000002-0000000-0000000000000000000000000";
 const WORKING: &str = "s-0000000003-0000000-working";
 const WORKING_LOCK: &str = "s-0000000003-0000000.lock";
+#[cfg(unix)]
+const SESSION_AGE: Duration = Duration::from_secs(6_000);
 
 static NEXT_FIXTURE: AtomicUsize = AtomicUsize::new(0);
 
@@ -138,6 +142,41 @@ fn checks_file_age_and_preserves_symlinked_paths() {
     assert!(outside_session.join("dep-graph.bin").exists() && linked.exists());
 }
 
+#[cfg(unix)]
+#[test]
+fn prunes_sessions_at_sub_day_thresholds() {
+    let fixture = Fixture::new();
+    let old = fixture.session("debug", OLD);
+    let recent = fixture.session("debug", NEW);
+    let modified = SystemTime::now() - SESSION_AGE;
+    for path in [&old, &old.join("dep-graph.bin")] {
+        File::open(path).unwrap().set_modified(modified).unwrap();
+    }
+
+    for (age, eligible) in [
+        ("2h", 0),
+        ("1d", 0),
+        ("1", 0),
+        ("1.5h", 1),
+        ("90m", 1),
+        ("5400s", 1),
+        ("1h45m", 0),
+    ] {
+        assert!(
+            fixture
+                .prune(&["--older-than", age, "--dry-run"])
+                .contains(&format!("Would remove {eligible} incremental session(s)")),
+            "{age}"
+        );
+    }
+    assert!(
+        fixture
+            .prune(&["--older-than", "1h 30m"])
+            .contains("Removed 1 incremental session(s)")
+    );
+    assert!(!old.exists() && recent.exists());
+}
+
 #[test]
 fn skips_locked_sessions_until_they_are_released() {
     let fixture = Fixture::new();
@@ -208,7 +247,7 @@ fn cargo_subcommand_resolves_a_real_build_directory() {
     let prune_args = [
         "prune",
         "--older-than",
-        "0",
+        "0s",
         "--manifest-path",
         "Cargo.toml",
     ];
@@ -246,6 +285,9 @@ fn invalid_options_fail_before_pruning() {
     let session = fixture.session("debug", OLD);
     for invalid in [
         "--older-than=18446744073709551615",
+        "--older-than=18446744073709551615h",
+        "--older-than=1fortnight",
+        "--older-than=1.5",
         "--target=../debug",
         "--profile=",
         "--build-dir=",
@@ -265,6 +307,32 @@ fn invalid_options_fail_before_pruning() {
         .arg(&fixture.0)
         .args(["--older-than=0", "-n"]);
     assert!(run(&mut cmd).contains("Would remove 1 incremental session(s)"));
+}
+
+#[test]
+fn compound_duration_overflow_is_a_cli_error() {
+    let fixture = Fixture::new();
+    let session = fixture.session("debug", OLD);
+    let max_seconds = Duration::MAX.as_secs();
+    let max_nanoseconds = Duration::MAX.subsec_nanos();
+    let max_age = format!("{max_seconds}s {max_nanoseconds}ns");
+    assert!(
+        fixture
+            .prune(&["--older-than", &max_age, "--dry-run"])
+            .contains("Would remove 0 incremental session(s)")
+    );
+
+    let overflow = format!("{max_age} 1ns");
+    let output = Command::new(env!("CARGO_BIN_EXE_cargo-prune"))
+        .arg("--build-dir")
+        .arg(&fixture.0)
+        .args(["--older-than", &overflow])
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert_eq!(output.status.code(), Some(2), "{stderr}");
+    assert!(stderr.contains("number is too large"), "{stderr}");
+    assert!(session.is_dir());
 }
 
 /// Runs a command and returns stdout, including stderr in any failure.

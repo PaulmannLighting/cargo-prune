@@ -1,16 +1,15 @@
 //! Arguments accepted by both `cargo prune` and the standalone binary.
 
-use std::env;
 use std::ffi::OsString;
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
+use std::{env, mem};
 
 use clap::Parser;
 use clap::builder::{OsStringValueParser, TypedValueParser};
 
-const DEFAULT_DAYS: &str = "30";
+const DEFAULT_AGE: &str = "30d";
 const DEFAULT_KEEP_LAST: usize = 0;
-const SECONDS_PER_DAY: u64 = 24 * 60 * 60;
 
 /// Prune stale Rust incremental compilation caches.
 #[derive(Parser)]
@@ -25,8 +24,8 @@ pub struct Options {
     #[arg(short = 'n', long)]
     pub(crate) dry_run: bool,
 
-    /// Minimum age in whole days.
-    #[arg(long = "older-than", value_name = "DAYS", default_value = DEFAULT_DAYS, value_parser = age)]
+    /// Minimum age, e.g. 1d, 2h, or "1h 30m" (bare integers mean days).
+    #[arg(long = "older-than", value_name = "DURATION", default_value = DEFAULT_AGE, value_parser = age)]
     pub(crate) age: Duration,
 
     /// Keep this many newest completed sessions per crate.
@@ -65,14 +64,44 @@ impl Options {
     }
 }
 
-/// Parses a whole number of days and checks that the result fits in a duration.
-fn age(value: &str) -> Result<Duration, &'static str> {
-    let days: u64 = value
-        .parse()
-        .map_err(|_| "expected a nonnegative integer")?;
-    days.checked_mul(SECONDS_PER_DAY)
-        .map(Duration::from_secs)
-        .ok_or("number of days is too large")
+/// Parses a human-readable duration, treating a bare integer as days.
+fn age(value: &str) -> Result<Duration, humantime::DurationError> {
+    value.parse::<u64>().map_or_else(
+        |_| checked_duration(value),
+        |days| humantime::parse_duration(&format!("{days}d")),
+    )
+}
+
+/// Checks compound totals before humantime can panic while carrying nanoseconds into seconds.
+fn checked_duration(value: &str) -> Result<Duration, humantime::DurationError> {
+    let mut has_unit = false;
+    let boundaries = value.match_indices(|character: char| {
+        if character.is_ascii_digit() {
+            return mem::take(&mut has_unit);
+        }
+        has_unit |= character.is_ascii_alphabetic() || character == 'µ';
+        false
+    });
+
+    let mut start = 0;
+    let mut total = Duration::ZERO;
+    for end in boundaries.map(|(end, _)| end).chain([value.len()]) {
+        if start == 0 && end == value.len() {
+            break;
+        }
+        let span = value
+            .get(start..end)
+            .and_then(|span| humantime::parse_duration(span).ok());
+        let Some(span) = span else {
+            // The whole input preserves humantime's error positions for malformed spans.
+            break;
+        };
+        total = total
+            .checked_add(span)
+            .ok_or(humantime::DurationError::NumberOverflow)?;
+        start = end;
+    }
+    humantime::parse_duration(value)
 }
 
 /// Resolves built-in profile aliases to their output directory names.

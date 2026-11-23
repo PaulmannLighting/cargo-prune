@@ -17,7 +17,7 @@ Run the command from a Cargo package or workspace:
 ```sh
 cargo prune --dry-run
 cargo prune
-cargo prune --older-than 14 --keep-last 1 --profile dev --target host
+cargo prune --older-than '1h 30m' --keep-last 1 --profile dev --target host
 ```
 
 By default, sessions with no files or directories modified in the last 30 days are eligible. `--older-than 0` makes any unlocked session eligible by age. `--keep-last N` protects the `N` most recent completed sessions for each crate cache, even when they exceed the age threshold. This is useful if you want to keep a warm incremental cache for each crate. A later build can regenerate pruned data as needed.
@@ -25,7 +25,7 @@ By default, sessions with no files or directories modified in the last 30 days a
 | Option | Effect |
 | --- | --- |
 | `-n`, `--dry-run` | List eligible sessions and their file sizes without removing them. |
-| `--older-than DAYS` | Set the minimum age in whole days. The default is 30. |
+| `--older-than DURATION` | Set the minimum age with a duration such as `1d`, `2h`, `90m`, `1h30m`, or `4.2s`. Bare integers mean days. The default is `30d`. |
 | `--keep-last COUNT` | Preserve up to this many completed sessions per crate cache. The default is 0. |
 | `--profile NAME` | Limit pruning to one profile. `dev` and `test` select `debug`, and `bench` selects `release`. |
 | `--target NAME` | Select a target directory name, or `host` for builds that omit Cargo's `--target`. |
