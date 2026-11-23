@@ -3,6 +3,7 @@
 use std::process::ExitCode;
 use std::time::SystemTime;
 
+use bytesize::ByteSize;
 use cli::Options;
 
 mod cache;
@@ -30,9 +31,10 @@ fn run(options: &Options) -> Result<()> {
     } else {
         "Removed"
     };
+    let size = ByteSize::b(report.bytes);
     println!(
-        "{action} {} incremental session(s) ({} bytes of cache files)",
-        report.sessions, report.bytes,
+        "{action} {} incremental session(s) ({size} of cache files)",
+        report.sessions,
     );
     if report.busy > 0 {
         println!("Skipped {} locked session(s)", report.busy);

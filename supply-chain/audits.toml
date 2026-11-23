@@ -28,6 +28,12 @@ AI-assisted delta audit. Reviewed generated flag constants moving out of nested 
 
 Existing audit reused from https://github.com/PaulmannLighting/apis-saltans/blob/ef0132d529e25ed495900d267813e820f8a690bf/supply-chain/audits.toml."""
 
+[[audits.bytesize]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+version = "2.7.0"
+notes = "AI-assisted full source audit of the published crate. Reviewed the manifest, byte conversions, IEC/SI formatter, UTF-8 parsing boundaries, and optional serde/arbitrary adapters. The crate wraps u64, and the formatter bounds the unit index across the full byte range. The library uses safe Rust and has no filesystem, network, or process access. The default feature set adds no dependencies, and the package has no build script."
+
 [[audits.clap]]
 who = "AI-assisted"
 criteria = "safe-to-deploy"

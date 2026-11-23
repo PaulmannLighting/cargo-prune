@@ -11,6 +11,7 @@ keywords = ["cargo", "incremental", "cache"]
 categories = ["command-line-utilities"]
 
 [dependencies]
+bytesize = "2.7"
 clap = { version = "4.6", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
 humantime = "2.4"
 serde_json = "1"

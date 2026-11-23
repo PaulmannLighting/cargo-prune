@@ -10,6 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, iter};
 
 // These dependencies are used by the binary exercised by this test target.
+use bytesize as _;
 use clap as _;
 use humantime as _;
 use serde_json as _;
@@ -89,7 +90,7 @@ fn dry_run_and_retention_respect_target_and_profile() {
     assert!(
         fixture
             .prune(&preview)
-            .contains("Would remove 2 incremental session(s) (10 bytes")
+            .contains("Would remove 2 incremental session(s) (10 B of cache files)")
     );
     assert!(old.exists() && working.exists());
 
@@ -108,6 +109,34 @@ fn dry_run_and_retention_respect_target_and_profile() {
     );
     fixture.prune(&["--older-than", "0", "--target=wasm32-wasip1"]);
     assert!(!cross.exists() && newest.exists());
+}
+
+#[test]
+fn displays_cache_sizes_in_binary_units() {
+    const SIZES: [(u64, &str); 2] = [(1_536, "1.5 KiB"), (2_621_440, "2.5 MiB")];
+
+    let fixture = Fixture::new();
+    for (bytes, size) in SIZES {
+        let session = fs::canonicalize(fixture.session("debug", OLD)).unwrap();
+        File::options()
+            .write(true)
+            .open(session.join("dep-graph.bin"))
+            .unwrap()
+            .set_len(bytes)
+            .unwrap();
+
+        let preview = fixture.prune(&["--older-than=0", "--dry-run"]);
+        assert!(preview.contains(&format!("Would remove {} ({size})", session.display())));
+        assert!(preview.contains(&format!(
+            "Would remove 1 incremental session(s) ({size} of cache files)"
+        )));
+
+        let removed = fixture.prune(&["--older-than=0", "--verbose"]);
+        assert!(removed.contains(&format!("Removed {} ({size})", session.display())));
+        assert!(removed.contains(&format!(
+            "Removed 1 incremental session(s) ({size} of cache files)"
+        )));
+    }
 }
 
 #[cfg(unix)]

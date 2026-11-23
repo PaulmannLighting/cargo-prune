@@ -5,6 +5,7 @@ use std::io::{self, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+use bytesize::ByteSize;
 #[cfg(unix)]
 use rustix::fs::{FlockOperation, fcntl_lock};
 #[cfg(unix)]
@@ -200,7 +201,8 @@ impl Session {
             } else {
                 "Removed"
             };
-            println!("{action} {} ({} bytes)", self.path.display(), stats.bytes);
+            let size = ByteSize::b(stats.bytes);
+            println!("{action} {} ({size})", self.path.display());
         }
         report.sessions += 1;
         report.bytes = report.bytes.saturating_add(stats.bytes);

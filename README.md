@@ -35,4 +35,4 @@ By default, sessions with no files or directories modified in the last 30 days a
 
 Cargo metadata resolves configured build and target directories. Older Cargo versions that report only the target directory use that field. Use `--build-dir` when pruning a separate build directory an older Cargo does not report, or when cleaning an old build directory after changing Cargo configuration. Both host and cross-target caches are included by default.
 
-The summary reports the logical byte sizes of removed cache files. Actual disk space recovered can differ, for example when another file still hard-links to the same data. Sessions locked by a running compiler are skipped.
+The output displays logical cache file sizes using units such as `B`, `KiB`, `MiB`, and `GiB`. Actual disk space recovered can differ, for example when another file still hard-links to the same data. Sessions locked by a running compiler are skipped.
