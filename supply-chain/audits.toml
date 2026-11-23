@@ -1,0 +1,338 @@
+
+# cargo-vet audits file
+
+[[audits.anstyle]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "1.0.14"
+notes = """
+AI-assisted full source review of version 1.0.14. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.bitflags]]
+who = "Richard Neumann <neumann@paulmann.de>"
+criteria = "safe-to-deploy"
+version = "2.13.1"
+notes = """
+AI-assisted full source audit. Reviewed flag-generation macros, bit truncation/retention and iterator behavior, plus optional serde/arbitrary/bytemuck integrations. Runtime code forbids unsafe; optional Pod/Zeroable implementations preserve the transparent integral representation, and the crate has no build script or I/O.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-jar-tool/blob/d214d4856937742d7f03b6c99758bcfc82e28013/supply-chain/audits.toml."""
+
+[[audits.bitflags]]
+who = "Codex AI"
+criteria = "safe-to-deploy"
+delta = "2.13.1 -> 2.13.2"
+notes = """
+AI-assisted delta audit. Reviewed generated flag constants moving out of nested const blocks to avoid a compiler ICE, lint allowances, and documentation/test ordering. Flag values and bit operations are unchanged; no new unsafe code or ambient capabilities.
+
+Existing audit reused from https://github.com/PaulmannLighting/apis-saltans/blob/ef0132d529e25ed495900d267813e820f8a690bf/supply-chain/audits.toml."""
+
+[[audits.clap]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "4.5.20 -> 4.6.4"
+notes = """
+AI-assisted review of the 4.5.20 to 4.6.4 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap]]
+who = "Richard Neumann <neumann@paulmann.de>"
+criteria = "safe-to-deploy"
+delta = "4.6.4 -> 4.6.5"
+notes = """
+AI-assisted: Reviewed the complete delta. Changes update clap_builder and add examples and snapshot tests; production logic, unsafe code, and ambient capabilities are unchanged.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "4.6.5 -> 4.6.6"
+notes = """
+Reviewed complete crate diff. Runtime library source is unchanged except documentation link; package pins reviewed clap_builder 4.6.6. New alias parsing is confined to git example binaries and uses fixed in-memory aliases with recursion detection; no library behavior, dependencies, or build script change.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "4.6.6 -> 4.6.9"
+notes = """
+Reviewed the published diff. Library changes are documentation only and the crate continues to re-export Clap's builder and derive APIs. Manifest updates to the paired dependencies are covered separately.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap_builder]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "4.5.18 -> 4.6.2"
+notes = """
+AI-assisted review of the 4.5.18 to 4.6.2 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap_builder]]
+who = "Richard Neumann <neumann@paulmann.de>"
+criteria = "safe-to-deploy"
+delta = "4.6.2 -> 4.6.5"
+notes = """
+AI-assisted: Reviewed the complete delta. Changes correct optional-value help rendering and update tests/documentation; parsing boundaries, unsafe code, and ambient capabilities are unchanged.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap_builder]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "4.6.5 -> 4.6.6"
+notes = """
+Reviewed full source and manifest diff. Internal Arg blacklist field is consistently renamed conflicts across builders, validation, and debug checks. Existing override usage getter becomes public under a new name with identical body, and usage rendering calls it; no parser semantics or dependencies change.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap_builder]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "4.6.6 -> 4.6.7"
+notes = """
+Reviewed the published diff. Production edits use Self for the same concrete types in builders, value parsers, storage and match adapters. Parsing behavior, the deferred callback signature, dependencies and I/O are unchanged.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap_derive]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "4.6.4"
+notes = """
+AI-assisted full source review of version 4.6.4. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. The macro parses compiler tokens and attributes and emits bounded trait or adapter code; generated unsafe code, where present, preserves the required layout and type bounds. No runtime I/O or hidden process/network access was found. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap_derive]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "4.6.4 -> 4.6.9"
+notes = """
+Reviewed the published diff. The defer attribute accepts a boolean literal on supported enums and generates an existing Command::defer callback for subcommands. Initial and final builder calls wrap augmentation and run in the same order on eager paths. No added unsafe code or ambient access.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap_lex]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "1.1.0"
+notes = """
+AI-assisted full source review of version 1.1.0. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.clap_lex]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "1.1.0 -> 1.1.2"
+notes = """
+Reviewed the published diff. The existing unchecked OsStr conversions now use Self for the same inherent method, with identical encoded input and UTF-8 split boundaries. The only dependency change is a test dependency update.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.errno]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "0.3.14"
+notes = """
+AI-assisted full source review of version 0.3.14. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. FFI and pointer operations are confined to the advertised OS or ABI bindings; ownership, lengths, nullability, calling conventions, and target gates are preserved. Build logic only selects or links the documented system or bundled implementation, with no hidden network access. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.errno]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "0.3.14 -> 0.3.15"
+notes = "AI-assisted review of the published source and manifest diff. Changes extend platform cfg/link-name selection for the existing thread-local errno pointer ABI and update documentation/lint metadata. No new pointer dereference or ambient capability."
+
+[[audits.heck]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "0.4.1 -> 0.5.0"
+notes = """
+AI-assisted review of the 0.4.1 to 0.5.0 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.itoa]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "1.0.15 -> 1.0.18"
+notes = """
+AI-assisted review of the 1.0.15 to 1.0.18 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. Unsafe blocks or traits are confined to the advertised representation, allocation, pinning, synchronization, parsing, or formatting fast paths; alignment, initialization, bounds, aliasing, and lifetime invariants are checked before safe exposure. No unexpected ambient capability was found. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.itoa]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "1.0.18 -> 1.0.19"
+notes = "AI-assisted review of published source and manifest changes. Reviewed every checked-to-unchecked buffer write against the sealed integer implementations and fixed maximum decimal widths, sign reservation, 4/2/1 digit decomposition, and u128 16-digit partitions. Each offset decrement is bounded by the remaining decimal width and each table pair is below 100; initialized suffix remains ASCII. No new I/O or build behavior."
+
+[[audits.libc]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+version = "0.2.186"
+notes = "AI-assisted local source review of libc 0.2.186 from the Cargo registry cache: platform libc declarations and constants with unsafe extern surface by design; build script probes compiler/platform metadata and does not introduce runtime filesystem, network, or process capabilities beyond libc bindings themselves."
+
+[[audits.libc]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+delta = "0.2.186 -> 0.2.191"
+notes = "Reviewed the published ABI declaration, build configuration and helper changes. The build script reads compiler and Cargo target metadata to emit ABI cfgs. Platform-specific descriptor-set, control-message and signal-union accessors keep their pointer preconditions on unsafe calls. The safe byte-to-C-char slice helper uses equal-sized, byte-aligned types, and opt-in zero defaults initialize C data that can represent zero. Signal equality and hashing use the initialized scalar header fields. No new ambient access was found. Platform declarations were reviewed structurally and the serial polling path was checked on Linux and at compile time on ARMv7."
+
+[[audits.linux-raw-sys]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "0.12.1"
+notes = """
+AI-assisted full source review of version 0.12.1. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. FFI and pointer operations are confined to the advertised OS or ABI bindings; ownership, lengths, nullability, calling conventions, and target gates are preserved. Build logic only selects or links the documented system or bundled implementation, with no hidden network access. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.memchr]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "2.8.3"
+notes = """
+AI-assisted full source review of version 2.8.3. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. Unsafe blocks or traits are confined to the advertised representation, allocation, pinning, synchronization, parsing, or formatting fast paths; alignment, initialization, bounds, aliasing, and lifetime invariants are checked before safe exposure. No unexpected ambient capability was found. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.proc-macro2]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "1.0.106 -> 1.0.107"
+notes = """
+AI-assisted review of the 1.0.106 to 1.0.107 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.quote]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "1.0.45 -> 1.0.47"
+notes = """
+AI-assisted review of the 1.0.45 to 1.0.47 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.rustix]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "1.1.4"
+notes = """
+AI-assisted full source review of version 1.1.4. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. FFI and pointer operations are confined to the advertised OS or ABI bindings; ownership, lengths, nullability, calling conventions, and target gates are preserved. Build logic only selects or links the documented system or bundled implementation, with no hidden network access. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.serde]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "1.0.219 -> 1.0.229"
+notes = """
+AI-assisted review of the 1.0.219 to 1.0.229 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. Filesystem, environment, network, or process operations are part of the advertised functionality and use caller-supplied paths/endpoints or standard platform discovery. Bounds and error paths are checked, with no hidden external communication or command construction. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.serde_core]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "1.0.229"
+notes = """
+AI-assisted full source review of version 1.0.229. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.serde_derive]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "1.0.219 -> 1.0.229"
+notes = """
+AI-assisted review of the 1.0.219 to 1.0.229 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. The macro parses compiler tokens and attributes and emits bounded trait or adapter code; generated unsafe code, where present, preserves the required layout and type bounds. No runtime I/O or hidden process/network access was found. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.serde_json]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "1.0.151"
+notes = """
+AI-assisted full source review of version 1.0.151. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.serde_json]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "1.0.151 -> 1.0.154"
+notes = "AI-assisted review of published source and manifest changes. Reviewed negative-zero parsing, finite f32 filtering, no_std preserve_order hasher selection, equivalent integer helpers, and improved invalid-UTF8 error positions. UTF-8 failure positions are within the original buffer and all new indexing remains checked; unchanged string/number unsafe fast paths retain prior preconditions. std preserve_order retains RandomState; the no_std hasher tradeoff is documented upstream."
+
+[[audits.syn]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "3.0.3"
+notes = """
+AI-assisted full source review of version 3.0.3. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.syn]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "3.0.3 -> 3.0.5"
+notes = """
+Reviewed complete library and test diff. Foreign-item function parser now enables the existing safe-foreign-signature parser path; LitStr tokenization maps lexer errors to the literal span. No new dependencies or I/O; remaining edits update rustc-internal tests, Clippy allowances, docs URL, and version metadata.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.syn]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "3.0.5 -> 3.0.10"
+notes = "AI-assisted review of published source and manifest changes. Reviewed lifetime group lookahead and operator parsing corrections, safe Punctuated retention, and disabling recursive precedence re-scans. AST/token transformations use existing safe data structures without new unsafe code or ambient access."
+
+[[audits.unicode-ident]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+version = "1.0.24"
+notes = "AI-assisted local source review of unicode-ident 1.0.24 from the Cargo registry cache: Unicode identifier table lookup with unsafe limited to bounds-elided table indexing; no filesystem, network, process, or FFI capabilities in library code."
+
+[[audits.unicode-ident]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+delta = "1.0.24 -> 1.0.27"
+notes = "Reviewed generated Unicode tables and compressed trie layout. Exhaustively checked every Unicode scalar against both lookup index calculations. The highest indices were 4959 and 7999 against 8248 leaf bytes. The crate remains table-only with no runtime I/O."
+
+[[audits.windows-link]]
+who = "Codex AI"
+criteria = "safe-to-deploy"
+version = "0.2.1"
+notes = """
+AI-assisted audit
+
+Existing audit reused from https://github.com/PaulmannLighting/apis-saltans/blob/ef0132d529e25ed495900d267813e820f8a690bf/supply-chain/audits.toml."""
+
+[[audits.windows-sys]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+version = "0.61.2"
+notes = """
+AI-assisted full source review of version 0.61.2. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. FFI and pointer operations are confined to the advertised OS or ABI bindings; ownership, lengths, nullability, calling conventions, and target gates are preserved. Build logic only selects or links the documented system or bundled implementation, with no hidden network access. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.zmij]]
+who = "AI-assisted"
+criteria = "safe-to-deploy"
+delta = "1.0.20 -> 1.0.23"
+notes = """
+AI-assisted review of the 1.0.20 to 1.0.23 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. Unsafe blocks or traits are confined to the advertised representation, allocation, pinning, synchronization, parsing, or formatting fast paths; alignment, initialization, bounds, aliasing, and lifetime invariants are checked before safe exposure. No unexpected ambient capability was found. No exploitable or surprising behavior was found.
+
+Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
