@@ -6,12 +6,14 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use bytesize::ByteSize;
+use indicatif::{ProgressBar, ProgressStyle};
 #[cfg(unix)]
 use rustix::fs::{FlockOperation, fcntl_lock};
 #[cfg(unix)]
 use rustix::io::Errno;
 
 use crate::cli::Options;
+use crate::progress::{CHECKING, ProgressBarExt};
 
 const INCREMENTAL: &str = "incremental";
 const HOST: &str = "host";
@@ -20,6 +22,8 @@ const CRATE_HASH_LEN: usize = 13;
 const TIMESTAMP_LEN: usize = 10;
 const NONCE_LEN: usize = 7;
 const SESSION_HASH_LEN: usize = 25;
+const BASE_SESSION_WORK: u64 = 1;
+const BYTES_PER_WORK_UNIT: u64 = 1024 * 1024;
 
 /// Counters for the current prune operation.
 #[derive(Default)]
@@ -29,12 +33,39 @@ pub struct Report {
     pub(crate) busy: usize,
 }
 
+impl Report {
+    /// Formats the running session count and cache size for the progress bar.
+    fn progress_message(&self, dry_run: bool, remaining_bytes: u64) -> String {
+        let size = ByteSize::b(self.bytes);
+        if dry_run {
+            format!("{} eligible ({size})", self.sessions)
+        } else {
+            let total = ByteSize::b(self.bytes.saturating_add(remaining_bytes));
+            format!("{} removed ({size}/{total})", self.sessions)
+        }
+    }
+}
+
 /// A recognized rustc session and the lock shared by its working and completed names.
 struct Session {
     path: PathBuf,
     lock_path: PathBuf,
     completed: bool,
     modified: SystemTime,
+}
+
+/// A discovered session with its retention decision and sizing result.
+struct PlannedSession {
+    session: Session,
+    retained: bool,
+    estimate: SessionEstimate,
+}
+
+/// Estimated processing work and logical cache bytes expected to be removed.
+#[derive(Default)]
+struct SessionEstimate {
+    work: u64,
+    bytes: u64,
 }
 
 /// Eligibility of the lock file at the time of the operation.
@@ -48,26 +79,37 @@ enum SessionLock {
     Unknown,
 }
 
-/// File bytes and most recent modification time in a session.
+/// File bytes, filesystem entries, and most recent modification time in a session.
 struct SessionStats {
     bytes: u64,
+    entries: u64,
     modified: SystemTime,
 }
 
-/// Prunes the selected host and cross-compiled profile caches beneath the build root.
-pub fn prune(root: &Path, options: &Options, now: SystemTime) -> io::Result<Report> {
+/// Discovers the selected sessions, then tracks completed sessions and estimated work.
+pub fn prune(
+    root: &Path,
+    options: &Options,
+    now: SystemTime,
+    progress: &ProgressBar,
+    process_style: ProgressStyle,
+    work_progress: &ProgressBar,
+) -> io::Result<Report> {
+    let interactive = progress.start_scan();
     let mut report = Report::default();
     let Some(root) = optional(fs::canonicalize(root))? else {
         return Ok(report);
     };
 
+    let estimate_sizes = interactive && !options.dry_run;
+    let mut plan = Vec::new();
     for dir in directories(&root)? {
         if options
             .target
             .as_deref()
             .is_none_or(|target| target == HOST)
         {
-            prune_profile(&dir, options, now, &mut report)?;
+            scan_profile(&dir, options, now, estimate_sizes, &mut plan)?;
         }
         if options
             .target
@@ -75,19 +117,61 @@ pub fn prune(root: &Path, options: &Options, now: SystemTime) -> io::Result<Repo
             .is_none_or(|target| target != HOST && dir.file_name() == Some(target))
         {
             for profile in directories(&dir)? {
-                prune_profile(&profile, options, now, &mut report)?;
+                scan_profile(&profile, options, now, estimate_sizes, &mut plan)?;
             }
         }
     }
+
+    if plan.is_empty() {
+        return Ok(report);
+    }
+    let mut remaining_work = plan
+        .iter()
+        .map(|item| item.estimate.work)
+        .fold(0, u64::saturating_add);
+    let mut remaining_bytes = plan
+        .iter()
+        .map(|item| item.estimate.bytes)
+        .fold(0, u64::saturating_add);
+    work_progress.start_estimate(remaining_work);
+    progress.start_processing(
+        plan.len(),
+        report.progress_message(options.dry_run, remaining_bytes),
+        process_style,
+    );
+
+    for item in plan {
+        let previous_count = report.sessions;
+        let actual_work = if item.retained {
+            0
+        } else {
+            item.session.prune(options, now, &mut report, progress)?
+        };
+        if interactive {
+            let done = if estimate_sizes {
+                actual_work
+            } else {
+                BASE_SESSION_WORK
+            };
+            remaining_work = remaining_work.saturating_sub(item.estimate.work);
+            remaining_bytes = remaining_bytes.saturating_sub(item.estimate.bytes);
+            work_progress.record_work(done, remaining_work);
+        }
+        let message = (report.sessions != previous_count || item.estimate.bytes > 0)
+            .then(|| report.progress_message(options.dry_run, remaining_bytes));
+        progress.record_session(message);
+    }
+    progress.force_draw();
     Ok(report)
 }
 
-/// Prunes sessions grouped by crate identifier in one profile.
-fn prune_profile(
+/// Discovers sessions and applies retention within each crate, newest first.
+fn scan_profile(
     profile: &Path,
     options: &Options,
     now: SystemTime,
-    report: &mut Report,
+    estimate_sizes: bool,
+    plan: &mut Vec<PlannedSession>,
 ) -> io::Result<()> {
     if options
         .profile
@@ -120,11 +204,25 @@ fn prune_profile(
         sessions.sort_unstable_by(|left, right| right.path.cmp(&left.path));
         let mut keep = options.keep_last;
         for session in sessions {
-            if session.completed && keep > 0 {
+            let retained = session.completed && keep > 0;
+            if retained {
                 keep -= 1;
-            } else {
-                session.prune(options, now, report)?;
             }
+            let estimate = if !estimate_sizes {
+                SessionEstimate {
+                    work: BASE_SESSION_WORK,
+                    ..SessionEstimate::default()
+                }
+            } else if retained {
+                SessionEstimate::default()
+            } else {
+                session.estimate(now, options)
+            };
+            plan.push(PlannedSession {
+                session,
+                retained,
+                estimate,
+            });
         }
     }
     Ok(())
@@ -166,30 +264,63 @@ impl Session {
         }))
     }
 
-    /// Checks the age and removes the entire session while holding its lock, if present.
-    fn prune(&self, options: &Options, now: SystemTime, report: &mut Report) -> io::Result<()> {
+    /// Sizes a potential removal while holding its lock, without changing the cache.
+    fn estimate(&self, now: SystemTime, options: &Options) -> SessionEstimate {
         if !is_old(self.modified, now, options) {
-            return Ok(());
+            return SessionEstimate::default();
+        }
+        let Ok(_lock @ (SessionLock::Held { .. } | SessionLock::Missing)) =
+            SessionLock::try_acquire(&self.lock_path)
+        else {
+            return SessionEstimate::default();
+        };
+        // Sizing is advisory. Processing rechecks the session and reports current I/O errors.
+        SessionStats::read(&self.path).ok().flatten().map_or_else(
+            SessionEstimate::default,
+            |stats| {
+                let removing = is_old(stats.modified, now, options);
+                SessionEstimate {
+                    work: stats.work(removing),
+                    bytes: if removing { stats.bytes } else { 0 },
+                }
+            },
+        )
+    }
+
+    /// Checks the age, removes the session under its lock, and returns the work performed.
+    fn prune(
+        &self,
+        options: &Options,
+        now: SystemTime,
+        report: &mut Report,
+        progress: &ProgressBar,
+    ) -> io::Result<u64> {
+        if !is_old(self.modified, now, options) {
+            return Ok(0);
         }
         let lock = SessionLock::try_acquire(&self.lock_path)?;
         match lock {
             SessionLock::Busy => {
                 report.busy += 1;
-                return Ok(());
+                return Ok(0);
             }
-            SessionLock::Unknown => return Ok(()),
+            SessionLock::Unknown => return Ok(0),
             _ => {}
         }
         let Some(stats) = SessionStats::read(&self.path)? else {
-            return Ok(());
+            return Ok(0);
         };
         if !is_old(stats.modified, now, options) {
-            return Ok(());
+            return Ok(stats.work(false));
         }
 
+        let size = ByteSize::b(stats.bytes);
         if !options.dry_run {
-            if optional(at(&self.path, fs::remove_dir_all(&self.path)))?.is_none() {
-                return Ok(());
+            progress.set_prefix(format!("Removing ({size})"));
+            let removed = optional(at(&self.path, fs::remove_dir_all(&self.path)))?;
+            progress.set_prefix(CHECKING);
+            if removed.is_none() {
+                return Ok(stats.work(false));
             }
             if let SessionLock::Held { .. } = &lock {
                 optional(at(&self.lock_path, fs::remove_file(&self.lock_path)))?;
@@ -201,12 +332,11 @@ impl Session {
             } else {
                 "Removed"
             };
-            let size = ByteSize::b(stats.bytes);
-            println!("{action} {} ({size})", self.path.display());
+            progress.suspend(|| println!("{action} {} ({size})", self.path.display()));
         }
         report.sessions += 1;
         report.bytes = report.bytes.saturating_add(stats.bytes);
-        Ok(())
+        Ok(stats.work(!options.dry_run))
     }
 }
 
@@ -243,6 +373,18 @@ impl SessionLock {
 }
 
 impl SessionStats {
+    /// Weights filesystem entries and, for removals, logical file size.
+    const fn work(&self, removing: bool) -> u64 {
+        let size_work = if removing {
+            self.bytes.div_ceil(BYTES_PER_WORK_UNIT)
+        } else {
+            0
+        };
+        BASE_SESSION_WORK
+            .saturating_add(self.entries)
+            .saturating_add(size_work)
+    }
+
     /// Inspects a complete session without following symlinks or accepting special files.
     fn read(path: &Path) -> io::Result<Option<Self>> {
         let Some(root) = metadata(path)?.filter(Metadata::is_dir) else {
@@ -250,6 +392,7 @@ impl SessionStats {
         };
         let mut stats = Self {
             bytes: 0,
+            entries: 0,
             modified: at(path, root.modified())?,
         };
         let mut pending = vec![path.to_path_buf()];
@@ -270,6 +413,7 @@ impl SessionStats {
                 } else {
                     return Ok(None);
                 }
+                stats.entries += 1;
                 stats.modified = stats.modified.max(at(&path, info.modified())?);
             }
         }

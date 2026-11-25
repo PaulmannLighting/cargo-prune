@@ -13,6 +13,7 @@ use std::{env, iter};
 use bytesize as _;
 use clap as _;
 use humantime as _;
+use indicatif as _;
 use serde_json as _;
 
 const CRATE_CACHE: &str = "example-0000000000000";
@@ -109,6 +110,26 @@ fn dry_run_and_retention_respect_target_and_profile() {
     );
     fixture.prune(&["--older-than", "0", "--target=wasm32-wasip1"]);
     assert!(!cross.exists() && newest.exists());
+}
+
+#[test]
+fn hides_progress_when_stderr_is_piped() {
+    let fixture = Fixture::new();
+    fixture.session("debug", OLD);
+
+    let output = Command::new(env!("CARGO_BIN_EXE_cargo-prune"))
+        .arg("--build-dir")
+        .arg(&fixture.0)
+        .arg("--older-than=0")
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    assert!(output.stderr.is_empty(), "{output:?}");
+    assert!(
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .contains("Removed 1 incremental session(s) (5 B of cache files)")
+    );
 }
 
 #[test]

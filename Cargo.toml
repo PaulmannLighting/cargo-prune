@@ -14,6 +14,7 @@ categories = ["command-line-utilities"]
 bytesize = "2.7"
 clap = { version = "4.6", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
 humantime = "2.4"
+indicatif = { version = "0.18", default-features = false }
 serde_json = "1"
 
 [target.'cfg(unix)'.dependencies]

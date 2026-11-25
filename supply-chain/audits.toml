@@ -142,6 +142,18 @@ Reviewed the published diff. The existing unchecked OsStr conversions now use Se
 
 Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
 
+[[audits.console]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+version = "0.16.6"
+notes = "Reviewed terminal detection, dimension and cursor handling, ANSI parsing, and Unix and Windows I/O. Unix FFI uses terminal descriptors and initialized or checked output buffers. Windows console queries use standard handles and check output status and UTF-16 name bounds. The optional terminal-input paths use stdin or the controlling terminal. There is no build script or network access."
+
+[[audits.encode_unicode]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+version = "1.0.0"
+notes = "Reviewed UTF-8 and UTF-16 character storage, conversions, and streaming decoders. Checked constructors validate continuation bytes, overlong sequences, scalar ranges, and surrogate pairs before unchecked conversion. Unchecked constructors document caller obligations, and string views rely on the validated internal representation. The deployed library has no build script, ambient I/O, or network dependencies."
+
 [[audits.errno]]
 who = "AI-assisted"
 criteria = "safe-to-deploy"
@@ -165,6 +177,12 @@ notes = """
 AI-assisted review of the 0.4.1 to 0.5.0 diff. Reviewed changed production sources, manifests, build behavior, unsafe/FFI sites, and ambient-capability changes. The implementation is bounded parsing, formatting, data modeling, or trait plumbing; deployed code introduces no unexpected filesystem, process, or network capability, and any localized unsafe marker is guarded by its documented invariant. No exploitable or surprising behavior was found.
 
 Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/d5ce6788cbc47277b0e96ad1f5ea8b5f5de81b29/supply-chain/audits.toml."""
+
+[[audits.indicatif]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+version = "0.18.6"
+notes = "Reviewed progress state, template parsing, rendering, rate limiting, iterator adapters, and thread lifecycle. Updates share mutex-protected state. The steady ticker holds a weak state reference, wakes on a condition variable, and stops when finished or dropped. Output targets the selected terminal or caller-provided writer. The project disables the optional dependencies. The crate has no build script, unsafe code, or ambient network access."
 
 [[audits.itoa]]
 who = "AI-assisted"
@@ -210,6 +228,12 @@ notes = """
 AI-assisted full source review of version 2.8.3. Reviewed production sources, manifests, build behavior, unsafe/FFI sites, and ambient capabilities. Unsafe blocks or traits are confined to the advertised representation, allocation, pinning, synchronization, parsing, or formatting fast paths; alignment, initialization, bounds, aliasing, and lifetime invariants are checked before safe exposure. No unexpected ambient capability was found. No exploitable or surprising behavior was found.
 
 Existing audit reused from https://github.com/PaulmannLighting/smik-2.0/blob/8e41cff057b946fcd613b42f744338f070a0b224/supply-chain/audits.toml."""
+
+[[audits.portable-atomic]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+version = "1.15.0"
+notes = "Reviewed the compiler probe and target selection, core-backed atomic wrappers, architecture-specific instruction and feature detection paths, and fallback synchronization. The build script runs Cargo's configured compiler for version metadata. Safe wrappers delegate to core or aligned storage behind target and CPU capability checks. The fallback uses atomic chunks and validates optimistic reads against a sequence stamp, with writers serialized by a guard. Privileged fallback modes require explicit target or feature selection. No runtime networking or application file access was found."
 
 [[audits.proc-macro2]]
 who = "AI-assisted"
@@ -315,6 +339,12 @@ who = "Codex (AI-assisted)"
 criteria = "safe-to-deploy"
 delta = "1.0.24 -> 1.0.27"
 notes = "Reviewed generated Unicode tables and compressed trie layout. Exhaustively checked every Unicode scalar against both lookup index calculations. The highest indices were 4959 and 7999 against 8248 leaf bytes. The crate remains table-only with no runtime I/O."
+
+[[audits.unit-prefix]]
+who = "Codex (AI-assisted)"
+criteria = "safe-to-deploy"
+version = "0.5.2"
+notes = "Reviewed numeric scaling, enum-to-prefix formatting, and parsing. Scaling is capped at the eight entries in the prefix table, and parsing splits at the character boundary returned by str::find. The library denies unsafe code and has no build script, third-party dependencies, or ambient I/O."
 
 [[audits.windows-link]]
 who = "Codex AI"

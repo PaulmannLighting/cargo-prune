@@ -9,6 +9,7 @@ use cli::Options;
 mod cache;
 mod cargo;
 mod cli;
+mod progress;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -25,7 +26,17 @@ fn main() -> ExitCode {
 /// Finds the selected cache and reports the effect of pruning it.
 fn run(options: &Options) -> Result<()> {
     let root = cargo::build_dir(options)?;
-    let report = cache::prune(&root, options, SystemTime::now())?;
+    let (display, work_progress, process_style) = progress::new()?;
+    let report = cache::prune(
+        &root,
+        options,
+        SystemTime::now(),
+        &display,
+        process_style,
+        &work_progress,
+    );
+    display.finish_and_clear();
+    let report = report?;
     let action = if options.dry_run {
         "Would remove"
     } else {
